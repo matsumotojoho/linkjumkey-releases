@@ -1,0 +1,117 @@
+name: Validate unpublished Mac candidate
+
+on:
+  push:
+    branches: ['validation/mac-1.8.15-shortcuttarget-570bdee0-20261009']
+    paths: ['.github/workflows/mac-runtime-candidate.yml']
+
+permissions: {}
+concurrency:
+  group: mac-candidate-1.8.15-shortcuttarget-570bdee0
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.repository == 'matsumotojoho/linkjumkey-releases' && github.event.repository.private == false && github.actor == 'matsumotojoho' && github.ref == 'refs/heads/validation/mac-1.8.15-shortcuttarget-570bdee0-20261009'
+    runs-on: macos-15
+    timeout-minutes: 10
+    # Draft visibility requires push access. Acquisition performs only REST GET.
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Download and verify exact draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, sys, urllib.error, urllib.parse, urllib.request, zipfile
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, request, fp, code, message, headers, new_url):
+                  return None
+          opener = urllib.request.build_opener(NoRedirect)
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'mac-candidate-validation'
+          repo = 'matsumotojoho/linkjumkey-releases'
+          tag = 'validation-mac-1.8.15-shortcuttarget-570bdee0-20261009'
+          expected = {
+              'LinkJumkey-Host-1.8.15-universal.zip': ('42368b9db8660bd352bb4cf3fb60655dcb2c0810b1a468ed26be10b0a0c18b48', 192938562),
+              'mac-runtime-validation-1.8.15-shortcuttarget-570bdee0.zip': ('e123c18657f55976c8dfd83e4acb20289d6ec066841613d9bdf003025b0cf12b', 28036),
+          }
+          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'User-Agent': 'candidate-validation',
+                     'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}
+          try:
+              if root.exists(): raise RuntimeError('existing-directory')
+              root.mkdir()
+              request = urllib.request.Request('https://api.github.com/repos/' + repo + '/releases?per_page=100', headers=headers)
+              with opener.open(request, timeout=120) as response:
+                  releases = json.load(response)
+              matches = [release for release in releases if release.get('tag_name') == tag]
+              if len(matches) != 1 or matches[0].get('draft') is not True or matches[0].get('published_at'):
+                  raise RuntimeError('expected-unpublished-draft')
+              release = matches[0]
+              if len(release.get('assets', [])) != 2: raise RuntimeError('expected-two-assets')
+              headers['Accept'] = 'application/octet-stream'
+              for name, (digest, size) in expected.items():
+                  assets = [asset for asset in release['assets'] if asset.get('name') == name]
+                  if len(assets) != 1 or assets[0].get('state') != 'uploaded' or assets[0].get('size') != size:
+                      raise RuntimeError('asset-identity')
+                  asset_id = int(assets[0]['id'])
+                  request = urllib.request.Request('https://api.github.com/repos/' + repo + '/releases/assets/' + str(asset_id), headers=headers)
+                  try:
+                      response = opener.open(request, timeout=180)
+                  except urllib.error.HTTPError as redirect:
+                      if redirect.code != 302: raise
+                      location = redirect.headers.get('Location', '')
+                      parsed = urllib.parse.urlsplit(location)
+                      if parsed.scheme != 'https' or parsed.hostname != 'release-assets.githubusercontent.com' or parsed.username or parsed.password or parsed.port not in (None, 443):
+                          raise RuntimeError('asset-redirect')
+                      redirect.close()
+                      # No Authorization header is forwarded to the signed URL.
+                      response = opener.open(urllib.request.Request(location, headers={'User-Agent': 'candidate-validation'}), timeout=180)
+                  downloaded = 0
+                  checksum = hashlib.sha256()
+                  target = root / name
+                  with response, target.open('xb') as output:
+                      if response.status != 200: raise RuntimeError('asset-http-status')
+                      while True:
+                          chunk = response.read(1024 * 1024)
+                          if not chunk: break
+                          downloaded += len(chunk)
+                          if downloaded > size: raise RuntimeError('asset-too-large')
+                          checksum.update(chunk)
+                          output.write(chunk)
+                  if downloaded != size or checksum.hexdigest() != digest:
+                      raise RuntimeError('asset-checksum')
+              candidate = root / 'candidate'
+              candidate.mkdir()
+              subprocess.run(['/usr/bin/ditto', '-x', '-k', str(root / 'LinkJumkey-Host-1.8.15-universal.zip'), str(candidate)],
+                             check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+              harness = root / 'harness'
+              harness.mkdir()
+              allowed = {'manifest.json', 'storage-manifest.json', 'probe-storage-runtime.cjs', 'probe-package.cjs', 'probe-live-mcp.cjs', 'observe-discovery.cjs', 'run-runtime-smoke.py'}
+              with zipfile.ZipFile(root / 'mac-runtime-validation-1.8.15-shortcuttarget-570bdee0.zip') as archive:
+                  if len(archive.infolist()) != len(allowed) or set(archive.namelist()) != allowed:
+                      raise RuntimeError('harness-entry-set')
+                  for entry in archive.infolist():
+                      if entry.file_size > 1024 * 1024 or (entry.external_attr >> 16) & 0o170000 == 0o120000:
+                          raise RuntimeError('harness-entry-type')
+                      with (harness / entry.filename).open('xb') as output:
+                          output.write(archive.read(entry))
+              print('Two exact draft assets verified; no release or feed was changed.')
+          except Exception:
+              print('Draft acquisition or checksum verification failed. No candidate was executed.', file=sys.stderr)
+              sys.exit(1)
+          finally:
+              os.environ.pop('GH_TOKEN', None)
+          PY
+
+      - name: Run isolated Mac candidate without API credentials
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, subprocess, sys
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'mac-candidate-validation'
+          result = subprocess.run(['python3', str(root / 'harness/run-runtime-smoke.py'), str(root / 'candidate'), str(root / 'results')])
+          sys.exit(result.returncode)
+          PY
