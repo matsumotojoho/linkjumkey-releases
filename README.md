@@ -34,6 +34,14 @@
 
 Freeプランは30ボタンまで。有料プランの機能・価格・無料試用の適用条件は[公式料金ページ](https://linkjumkey.matsumotojoho.com/pricing.html)と購入画面で確認できます。購入経路によって価格・条件が異なります。
 
+## AI連携（MCP）
+
+Claude Desktop などのMCP対応AIツールから、LinkJumkey のプロジェクトを読んだり、URLボタンを追加したりできます。PC操作ボタン（アプリ起動・キー送信・Excelマクロなど）はAIが提案するだけで、PC版の承認画面で内容を確認してから保存します。ボタンの実行・完全削除・スクリプト作成はできません。
+
+- 接続ファイル：[LinkJumkey.mcpb](https://github.com/matsumotojoho/linkjumkey-releases/releases/latest/download/LinkJumkey.mcpb)（PC版のインストールと起動が必要です）
+- 設定手順：[AIと作業を進め、メモから再開する](https://linkjumkey.matsumotojoho.com/guide/mcp-setup.html)
+- 公式 MCP Registry：`io.github.matsumotojoho/linkjumkey`
+
 ## English
 
 Keep a note beside the links you use at work. Organize buttons by project, then open the link and see what to check next.
@@ -41,6 +49,8 @@ Keep a note beside the links you use at work. Organize buttons by project, then 
 [Try the English demo](https://linkjumkey.matsumotojoho.com/solutions/project-notes.html): enter a label, URL and note, create a button, then press it. No sign-up is needed to try. Verify your email to save your buttons in the [Web app](https://linkjumkey.matsumotojoho.com/app.html?lang=en).
 
 This repository distributes the desktop app. macOS builds are signed and notarized; the Windows installer is currently unsigned. See the [latest release](https://github.com/matsumotojoho/linkjumkey-releases/releases/latest) for downloads and release notes.
+
+MCP: Claude Desktop and other MCP clients can read your LinkJumkey projects and add http/https link buttons with notes. PC operation buttons are only proposed: they open an approval screen in the desktop app and are saved after you confirm. There are no run, delete, or custom-script tools. Requires LinkJumkey Desktop (macOS / Windows) running on the same PC. [Download LinkJumkey.mcpb](https://github.com/matsumotojoho/linkjumkey-releases/releases/latest/download/LinkJumkey.mcpb)
 
 ## ガイド・問い合わせ
 
