@@ -1,0 +1,166 @@
+LinkJumkey search-field arguments: contract for AI writing code
+================================================================
+
+Human guide (Japanese): https://linkjumkey.matsumotojoho.com/guide/input-arguments.html
+Applies to: LinkJumkey Desktop 1.8.16 or later (macOS and Windows).
+
+LinkJumkey has a search field at the top of the app (UI label: 検索語入力欄).
+A PC action button can hand the field's text to an Excel macro, to PC code,
+or to an application's launch arguments. The phone Pad can press the same
+buttons; then the text comes from the Pad's input field.
+
+1. The value
+------------
+- One string: the field text with leading/trailing whitespace and newlines
+  removed. Inner newlines are kept. The action runs once, not once per line.
+- May be an empty string (the clipboard is NOT used as a fallback).
+- At most 8192 characters. Longer text or a NUL character stops the run.
+- Not URL-encoded. Treat it as untrusted data: it can contain & | < > " ' `
+  $ % ! ^ ; ( ) and Japanese text.
+
+2. Excel macro (UI: Excelマクロ, setting 「検索語入力欄の内容をマクロの引数で渡す」)
+-------------------------------------------------------------------------
+- The macro receives the value as its FIRST argument. Write it as:
+      Sub SearchWord(word As String)
+- A macro without that parameter fails when the setting is on.
+- The workbook in 「Excelファイル」 is opened first, then the macro runs.
+  Open other workbooks yourself (Workbooks.Open).
+- Windows passes it through Excel's Run; macOS through AppleScript
+  "run VB macro ... arg1".
+
+3. PC code (UI: PCでコードを使う, setting 「検索語入力欄の内容をコードに渡す」)
+-----------------------------------------------------------------------
+Read the value as follows. The value is never inserted into the script text.
+
+  PowerShell (Windows)       $env:LINKJUMKEY_INPUT
+                             ($args is empty: the script is read from stdin)
+  Command Prompt (Windows)   !LINKJUMKEY_INPUT!
+                             Delayed expansion is enabled (cmd /v:on) when
+                             the setting is on, so "!" in the script is a
+                             variable delimiter. Never use %LINKJUMKEY_INPUT%:
+                             it is expanded before the line is parsed, so
+                             & | > in the value would run as commands.
+  AppleScript (macOS)        on run argv ... item 1 of argv
+                             (system attribute garbles non-ASCII text)
+  Shell, zsh (macOS)         "$1"  or  "$LINKJUMKEY_INPUT"  (always quoted)
+
+- Output on stdout is shown by the 「PCで試す」 test button. For Japanese
+  output, Command Prompt should start with
+      chcp 65001 >nul
+  PowerShell output shows as is on 1.8.17 or later (on 1.8.16, start with
+  [Console]::OutputEncoding = [Text.Encoding]::UTF8).
+- Runs are stopped after 30 seconds (a +Auto plan may set timeoutMs up to
+  120000).
+- Windows on Desktop 1.8.17 or later: PowerShell and Command Prompt code may
+  contain Japanese as is, and PowerShell may use multi-line statements
+  (if/else blocks, here-strings, pipelines continued with |). On 1.8.16,
+  Japanese in the code is garbled: take it from the search term, or in
+  PowerShell write it as [regex]::Unescape('\u65e5\u672c\u8a9e').
+- PowerShell code runs as if typed at a prompt, statement by statement, so a
+  throw does not always stop the rest of the code. Use exit N to stop.
+- macOS AppleScript and shell code may contain Japanese as is.
+
+4. Launch arguments (UI: ファイルを開く / アプリを起動, field 「起動時の引数」)
+-----------------------------------------------------------------------
+- One argument per line (JSON: one array item per argument). Each item is
+  trimmed; empty items are ignored. At most 20 items, 1000 characters each,
+  no newlines.
+- Every occurrence of the token {検索語} is replaced with the value.
+  Keep the token exactly as written, including the Japanese characters.
+- For 「ファイルを開く」 the file path is appended as the last argument.
+- An application must be chosen; the OS default app cannot take arguments.
+- Windows: arguments are quoted automatically by Windows argv rules.
+  Batch files (.bat/.cmd) never receive launch arguments. Command
+  interpreters (cmd, powershell, pwsh, wscript, cscript, mshta, wsl, bash,
+  conhost) are refused when {検索語} is used; use PC code instead.
+- macOS: delivered with "open --args"; ignored if the app is already running.
+
+5. JSON fields
+--------------
+  "passInput": true      runMacro (AI import, MCP, +Auto) and runScript (+Auto)
+  "launchArgs": [ ... ]  openApp / openFile (AI import, MCP, +Auto)
+
+  Example PC action button (AI import / MCP step format):
+  {
+    "title": "請求書を検索",
+    "steps": [
+      { "kind": "runMacro", "file": "C:\\Users\\yourname\\Documents\\検索.xlsm",
+        "macro": "Module1.SearchWord", "passInput": true },
+      { "kind": "openFile", "app": "Adobe Acrobat",
+        "file": "C:\\Users\\yourname\\Documents\\請求書一覧.pdf",
+        "launchArgs": ["/A", "search={検索語}"] }
+    ]
+  }
+
+- Every route ends in a review screen on the PC before saving.
+- runScript bodies cannot be created through AI import or MCP; propose the
+  code and let the user paste it, or use a +Auto draft.
+- +Auto Plan schema:
+  https://linkjumkey.matsumotojoho.com/guide/linkjumkey-auto-plan-v1.schema.json
+- Share links keep passInput but drop launchArgs (they may contain paths).
+
+6. Rules for code you write
+---------------------------
+- Treat the value as data. Do not build command text from it:
+  no Invoke-Expression, no PowerShell "&" with the value, no cmd /c,
+  no call or for /f on it, no eval or sh -c, no Application.Run or Shell
+  with it in VBA.
+- Pass it as a parameter value instead, e.g.
+  Get-ChildItem -Filter "*$term*"         (PowerShell)
+  do shell script "mdfind -name " & quoted form of term   (AppleScript)
+  grep -r -- "$1" "$HOME/Documents"       (shell)
+- Handle the empty string.
+- Buttons using these settings cannot run from external run links
+  (linkjumkey://run). Changing a setting requires saving the button again
+  on that PC, which is the approval step.
+
+7. Minimal examples
+-------------------
+PowerShell:
+  $term = $env:LINKJUMKEY_INPUT
+  if ([string]::IsNullOrEmpty($term)) { exit }
+  Get-ChildItem "$env:USERPROFILE\Documents" -Recurse -File -Filter "*$term*" |
+    Select-Object -First 1 | ForEach-Object { Invoke-Item -LiteralPath $_.FullName }
+
+Command Prompt:
+  chcp 65001 >nul
+  dir /s /b "%USERPROFILE%\Documents\*!LINKJUMKEY_INPUT!*"
+
+AppleScript:
+  on run argv
+    set term to item 1 of argv
+    if term is "" then return
+    set found to do shell script "mdfind -onlyin ~/Documents -name " & quoted form of term & " | head -n 1"
+    if found is not "" then do shell script "open " & quoted form of found
+  end run
+
+Shell:
+  term="$1"
+  [ -z "$term" ] && exit 0
+  file=$(mdfind -onlyin "$HOME/Documents" -name "$term" | head -n 1)
+  [ -n "$file" ] && open "$file"
+
+Excel VBA:
+  Sub SearchWord(word As String)
+      If word = "" Then Exit Sub
+      Dim hit As Range
+      Set hit = ActiveSheet.Cells.Find(What:=word, LookAt:=xlPart)
+      If Not hit Is Nothing Then hit.Select
+  End Sub
+
+8. Complete external-tool recipe (Desktop 1.8.24+)
+------------------------------------------------
+A button definition alone does not implement a database search or CSV output.
+Working PowerShell 5.1/7 + Python/SQLite example, with synthetic data and tests:
+  https://linkjumkey.matsumotojoho.com/examples/customer-search/README.md
+Human guide: https://linkjumkey.matsumotojoho.com/guide/external-tools.html
+Exact input/output, project selection, API responses and errors:
+  https://linkjumkey.matsumotojoho.com/developers/external-tools.md
+OpenAPI: https://linkjumkey.matsumotojoho.com/developers/integrations-api.openapi.json
+
+Keep Japanese .ps1/.psm1 files UTF-8 with BOM for Windows PowerShell 5.1.
+Send JSON as [Text.Encoding]::UTF8.GetBytes($json) and specify
+Content-Type: application/json; charset=utf-8. API responses specify UTF-8
+on Desktop 1.8.24+. Read project names from projects[i].name, never stringify
+the entire project object. Select a project explicitly before direct saving.
+Cloud runtimes such as Google Apps Script cannot access a user's PC localhost.

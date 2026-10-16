@@ -1,0 +1,77 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LinkJumkey local external-tool API",
+    "version": "1.8.24",
+    "description": "Desktop 1.8.24+. All JSON responses specify application/json; charset=utf-8. Use the Base URL displayed in Desktop settings. This API runs on the user's PC; cloud runtimes cannot reach that PC through their own 127.0.0.1. Direct writes have no import preview. Do not distribute real tokens."
+  },
+  "servers": [{"url": "http://127.0.0.1:{port}", "variables": {"port": {"default": "9634"}}}],
+  "security": [{"localBearer": []}],
+  "paths": {
+    "/status": {
+      "get": {
+        "operationId": "getStatus", "summary": "Check connectivity without reading or writing the library", "security": [],
+        "responses": {"200": {"description": "Does not verify library authentication.", "content": {"application/json": {"schema": {"type": "object", "properties": {"ok": {"type": "boolean"}, "running": {"type": "boolean"}}}, "example": {"ok": true, "running": true}}}}}
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "operationId": "listProjects", "summary": "List exact destination names and IDs",
+        "responses": {
+          "200": {"description": "projects is an object array. Read object.name, never stringify the entire object.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProjectsResponse"}, "example": {"ok": true, "projects": [{"id": "prj_example", "name": "顧客調査", "rootId": "root_example"}], "projectNames": ["顧客調査"]}}}},
+          "401": {"$ref": "#/components/responses/Error"}, "403": {"$ref": "#/components/responses/Error"}, "405": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/api/quick-add": {
+      "post": {
+        "operationId": "quickAddButton", "summary": "Save one HTTP/HTTPS button directly without a preview",
+        "description": "Unknown names require createProject:true. Unknown IDs always fail. Matching is exact, including kana, case and whitespace. requestId deduplication lasts only while its entry remains among the most recent 256 distinct IDs; after eviction a retry is a new operation. Length limits use UTF-16 code units.",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/QuickAddRequest"}, "example": {"title": "顧客検索結果", "url": "https://crm.example/reports/123", "project": "顧客調査", "requestId": "customer-report-123"}}}},
+        "responses": {
+          "200": {"description": "Verify button.id, button.url and project.id/name. Replays return the original button with created:false and replayed:true.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/QuickAddResponse"}, "example": {"ok": true, "created": true, "replayed": false, "project": {"id": "prj_example", "name": "顧客調査", "rootId": "root_example"}, "folderId": "root_example", "button": {"id": "item_example", "title": "顧客検索結果", "url": "https://crm.example/reports/123", "typeMode": "fixed"}, "requestId": "customer-report-123", "snapshot": "snapshot_example.json"}}}},
+          "400": {"$ref": "#/components/responses/Error"}, "401": {"$ref": "#/components/responses/Error"}, "403": {"$ref": "#/components/responses/Error"}, "404": {"$ref": "#/components/responses/Error"}, "405": {"$ref": "#/components/responses/Error"}, "409": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/library": {
+      "get": {
+        "operationId": "getLegacyLibrary", "summary": "Existing full library API; remains available",
+        "responses": {"200": {"description": "The legacy projects array contains name/buttonCount/folderCount. data retains the existing library format.", "content": {"application/json": {"schema": {"type": "object", "required": ["ok", "projects", "data"], "properties": {"ok": {"const": true}, "current": {"type": "string"}, "projects": {"type": "array", "items": {"$ref": "#/components/schemas/LegacyProjectSummary"}}, "data": {"type": "object", "additionalProperties": true}}}}}}}
+      }
+    },
+    "/library/apply": {
+      "post": {
+        "operationId": "applyLegacyChanges", "summary": "Existing changeset API; a different contract from quick-add",
+        "description": "Legacy createButton implicitly creates unknown string project names. Omitted/empty project uses AI作成. Explicit null/objects and other non-string values are rejected. HTTP/HTTPS only. Response uses applied[], not button. Other existing operations retain their original contracts.",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["changes"], "properties": {"changes": {"type": "array", "items": {"type": "object", "additionalProperties": true}}}}, "example": {"changes": [{"op": "createButton", "project": "顧客調査", "button": {"title": "顧客検索結果", "url": "https://crm.example/reports/123", "typeMode": "fixed"}}]}}}},
+        "responses": {"200": {"description": "Check applied[].id and project for each createButton result.", "content": {"application/json": {"schema": {"type": "object", "required": ["ok", "applied"], "properties": {"ok": {"const": true}, "applied": {"type": "array", "items": {"type": "object"}}}}, "example": {"ok": true, "applied": [{"op": "createButton", "project": "顧客調査", "id": "item_example", "title": "顧客検索結果"}]}}}}}
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {"localBearer": {"type": "http", "scheme": "bearer", "description": "Copy the local API key in Desktop Settings > MCP / AI integration > Local API. Do not use the pairing code or MCP configuration as a token."}},
+    "responses": {"Error": {"description": "Branch on HTTP status and code. error/hint text is for display.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}},
+    "schemas": {
+      "Project": {"type": "object", "required": ["id", "name", "rootId"], "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "rootId": {"type": "string"}}},
+      "ProjectsResponse": {"type": "object", "required": ["ok", "projects", "projectNames"], "properties": {"ok": {"const": true}, "projects": {"type": "array", "items": {"$ref": "#/components/schemas/Project"}}, "projectNames": {"type": "array", "items": {"type": "string"}}}},
+      "QuickAddRequest": {
+        "type": "object", "additionalProperties": false, "required": ["title", "url"],
+        "oneOf": [{"required": ["project"], "not": {"required": ["projectId"]}}, {"required": ["projectId"], "not": {"required": ["project"]}}],
+        "properties": {
+          "title": {"type": "string", "minLength": 1, "maxLength": 120, "description": "Trimmed before validation and storage. Limits use UTF-16 code units."},
+          "url": {"type": "string", "format": "uri", "pattern": "^https?://", "maxLength": 4096, "description": "Complete HTTP/HTTPS URL. Credentials, backslashes, whitespace and controls are forbidden. Not trimmed."},
+          "project": {"type": "string", "minLength": 1, "description": "Exact projects[].name. Existing long names are accepted; only new names are limited to 120 UTF-16 units. Reserved Object.prototype names, prototype, [object Object] and PowerShell @{...} object representations are rejected."},
+          "projectId": {"type": "string", "minLength": 1, "maxLength": 256, "description": "Exact existing ID; not trimmed."},
+          "folderId": {"type": "string", "minLength": 1, "maxLength": 256, "description": "An existing folder in that project. Defaults to root. Not trimmed."},
+          "note": {"type": "string", "maxLength": 2000, "description": "CRLF and CR are normalized to LF."},
+          "createProject": {"type": "boolean", "default": false, "description": "Explicitly create an unknown project name. Never creates an unknown projectId."},
+          "requestId": {"type": "string", "minLength": 1, "maxLength": 128, "description": "Same normalized payload reuses a button while this ID remains among the last 256 distinct IDs. Not trimmed. Changed payload yields REQUEST_ID_CONFLICT; a deleted/moved/modified saved target yields REQUEST_TARGET_MISSING."}
+        }
+      },
+      "QuickAddResponse": {"type": "object", "required": ["ok", "created", "replayed", "project", "folderId", "button", "requestId", "snapshot"], "properties": {"ok": {"const": true}, "created": {"type": "boolean"}, "replayed": {"type": "boolean"}, "project": {"$ref": "#/components/schemas/Project"}, "folderId": {"type": "string"}, "button": {"type": "object", "required": ["id", "title", "url", "typeMode"], "properties": {"id": {"type": "string"}, "title": {"type": "string"}, "url": {"type": "string", "format": "uri"}, "typeMode": {"const": "fixed"}}}, "requestId": {"type": ["string", "null"]}, "snapshot": {"type": "string"}}},
+      "Error": {"type": "object", "required": ["ok", "error", "code", "hint"], "properties": {"ok": {"const": false}, "error": {"type": "string"}, "code": {"type": "string", "examples": ["PROJECT_REQUIRED", "UNKNOWN_FIELD", "INVALID_INPUT", "INVALID_PROJECT", "INVALID_URL", "INVALID_JSON", "AUTH_REQUIRED", "ORIGIN_FORBIDDEN", "PROJECT_NOT_FOUND", "FOLDER_NOT_FOUND", "AMBIGUOUS_PROJECT", "REQUEST_ID_CONFLICT", "REQUEST_TARGET_MISSING", "METHOD_NOT_ALLOWED"]}, "hint": {"type": "string"}}},
+      "LegacyProjectSummary": {"type": "object", "required": ["name", "buttonCount", "folderCount"], "properties": {"name": {"type": "string"}, "buttonCount": {"type": "integer"}, "folderCount": {"type": "integer"}}}
+    }
+  }
+}

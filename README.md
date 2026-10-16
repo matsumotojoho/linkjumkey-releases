@@ -42,6 +42,20 @@ Claude Desktop などのMCP対応AIツールから、LinkJumkey のプロジェ�
 - 設定手順：[AIと作業を進め、メモから再開する](https://linkjumkey.matsumotojoho.com/guide/mcp-setup.html)
 - 公式 MCP Registry：`io.github.matsumotojoho/linkjumkey`
 
+## AIで外部ツールを作る
+
+LinkJumkey Desktop 1.8.24以降では、同じPCの外部ツールからプロジェクトを選び、検索結果などのURLをボタンとして保存できます。AIに開発を依頼する場合は、次の仕様と完成サンプルを渡してください。公式サイトをAIが取得できない場合にも使えるよう、公開済みの資料をこのリポジトリの `docs/` にコピーしています。
+
+AIには「このMarkdown仕様を読んで、外部ツールのプログラムを実装・検証して」と依頼します。一括登録JSONの作成やクリップボード取り込みは別の機能です。
+
+- [外部ツールのAPI仕様・接続手順](https://github.com/matsumotojoho/linkjumkey-releases/blob/main/docs/developers/external-tools.md) / [AI向けRaw本文](https://raw.githubusercontent.com/matsumotojoho/linkjumkey-releases/main/docs/developers/external-tools.md)
+- [機械可読OpenAPI](https://raw.githubusercontent.com/matsumotojoho/linkjumkey-releases/main/docs/developers/integrations-api.openapi.json)
+- [検索語を外部スクリプトへ渡す契約](https://raw.githubusercontent.com/matsumotojoho/linkjumkey-releases/main/docs/guide/linkjumkey-input-arguments.txt)
+- [WindowsのPowerShell＋SQLite完成サンプルと実行手順](https://github.com/matsumotojoho/linkjumkey-releases/blob/main/docs/examples/customer-search/README.md) / [7ファイル入りZIP](https://raw.githubusercontent.com/matsumotojoho/linkjumkey-releases/main/docs/examples/customer-search.zip)
+- [Webサイト・Notesから、利用者が確認して追加する方式](https://github.com/matsumotojoho/linkjumkey-releases/blob/main/docs/developers/add-button.md)
+
+資料の正本と人向けの手順は[公式の外部ツール開発ガイド](https://linkjumkey.matsumotojoho.com/guide/external-tools.html)です。サンプルは架空の顧客DBを生成して使い、実データ・認証キー・実行結果は配布していません。接続先とキーは利用者のPCで確認し、キーをAIへ渡したり公開コードへ書き込んだりしないでください。
+
 ## English
 
 Keep a note beside the links you use at work. Organize buttons by project, then open the link and see what to check next.

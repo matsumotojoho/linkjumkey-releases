@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://linkjumkey.matsumotojoho.com/developers/add-button.schema.json",
+  "title": "LinkJumkey Add Button v1 options",
+  "description": "Validates the named options object passed to createLink/createDesktopLink in integration code. This is not an import-file schema or an instruction to generate or copy a JSON file. Implement a user-clicked control that opens the returned URL; the user confirms and saves in LinkJumkey. Desktop 1.8.21+ supports direct add and Notes. URL parsing and encoded aggregate length must also pass SDK validation; schema validation alone does not prove an import will fit. Open linkjumkey://add? through the OS, or navigate to https://linkjumkey.matsumotojoho.com/import.html#add=1& with the fields. No localhost port or executable path is configured for this add-link contract. Do not POST this options object to an invented HTTP endpoint; the separate local library API is a different contract and its createButton does not accept notes URLs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "url"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "\\S",
+      "description": "Button display name; trimmed before the 120 UTF-16-unit limit. Nonblank; no ASCII controls. Not positional argv.",
+      "allOf": [
+        {
+          "not": {
+            "pattern": "[\\u0000-\\u001f\\u007f]"
+          }
+        }
+      ]
+    },
+    "url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "format": "uri",
+      "pattern": "^(?:[hH][tT][tT][pP][sS]?|[nN][oO][tT][eE][sS])://",
+      "description": "Complete absolute http, https or notes URL, without credentials. Obtain NotesURL from the source document API; do not concatenate a document ID alone.",
+      "allOf": [
+        {
+          "not": {
+            "pattern": "[\\u0000-\\u0020\\u007f]"
+          }
+        }
+      ]
+    },
+    "project": {
+      "type": "string",
+      "maxLength": 120,
+      "default": "外部サイト",
+      "description": "Destination project name, trimmed; default 外部サイト. Merge into the root of the same-name project, creating it if absent. Keep default merge for addition; choosing replace can remove existing contents of that project. This contract cannot select an arbitrary destination folder. Nonblank with no ASCII controls; case-sensitive reserved names are forbidden even with surrounding spaces.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "allOf": [
+        {
+          "not": {
+            "pattern": "[\\u0000-\\u001f\\u007f]"
+          }
+        },
+        {
+          "not": {
+            "pattern": "^\\s*(?:constructor|__defineGetter__|__defineSetter__|hasOwnProperty|__lookupGetter__|__lookupSetter__|isPrototypeOf|propertyIsEnumerable|toString|valueOf|__proto__|toLocaleString|prototype)\\s*$"
+          }
+        }
+      ]
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 2000,
+      "default": "",
+      "description": "Plain text; CRLF/CR normalize to LF, HTML escaped. TAB/LF/CR allowed; other ASCII controls forbidden. At most 2000 UTF-16 units before normalization.",
+      "not": {
+        "pattern": "[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f]"
+      }
+    },
+    "typeMode": {
+      "type": "string",
+      "enum": [
+        "fixed",
+        "template"
+      ],
+      "default": "fixed",
+      "description": "template appends URL-encoded common input; no placeholders. Notes only supports fixed."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "url": {
+            "pattern": "^[nN][oO][tT][eE][sS]:"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "then": {
+        "properties": {
+          "typeMode": {
+            "const": "fixed"
+          }
+        }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "title": "Example Docs",
+      "url": "https://example.com/docs"
+    },
+    {
+      "title": "製品検索",
+      "url": "https://example.com/search?q=",
+      "typeMode": "template"
+    }
+  ],
+  "$comment": "SDK validation is authoritative. SDK limits use JavaScript UTF-16 string length after title/project trimming; JSON Schema maxLength uses Unicode code points. Both generated URI length and canonical UTF-8 JSON Base64URL payload length must be <=8000. Reject malformed/duplicate/unknown URI parameters."
+}
