@@ -1,6 +1,8 @@
 # LinkJumkey（リンクジャンキー）
 
-よく使うURLをボタンにして、「次に確認すること」をメモとして残せるアプリです。プロジェクトごとにリンクを整理し、PC版ではファイルやアプリを開くボタンも作れます。
+LinkJumkey（リンクジャンキー）は、ブックマークにメモを付けて整理できるアプリです。Windows・MacのDesktop版では、よく使うサイトとPCのフォルダー・ファイル・アプリを一か所から開くランチャーとして使えます。
+
+Web版・iPhone/iPad版はURLとメモの整理に使えます。PC内のフォルダーやアプリを開く操作はDesktop版で実行します。
 
 [公式サイト](https://linkjumkey.matsumotojoho.com/) · [登録不要の操作体験](https://linkjumkey.matsumotojoho.com/solutions/sales-start.html) · [English demo](https://linkjumkey.matsumotojoho.com/solutions/project-notes.html)
 
@@ -17,7 +19,7 @@
 
 初めての方は、[インストールと最初のボタンの作り方](https://linkjumkey.matsumotojoho.com/guide/getting-started.html)をご覧ください。更新内容・その他の配布ファイルは[最新リリース](https://github.com/matsumotojoho/linkjumkey-releases/releases/latest)にあります。
 
-## まず1つ、URLにメモを残す
+## まず1つ、ブックマークにメモを付ける
 
 1. [登録不要の体験ページ](https://linkjumkey.matsumotojoho.com/solutions/sales-start.html)を開きます。
 2. ボタン名・URL・メモを入力します。たとえば「案件の議事録」に「次回：確認待ちの2点を聞く」と残します。
@@ -27,19 +29,22 @@
 
 ## こんな使い方に
 
-- 複数案件の要件書・タスク・成果物を、プロジェクトごとにまとめる
-- よく検索する語句を入力し、必要な検索先のボタンを選ぶ
-- PCのファイルやアプリを、仕事ごとのボタンから開く
-- スマホをPCの左手デバイスとして使う（[Padの接続・操作ガイド](https://linkjumkey.matsumotojoho.com/guide/mobile-companion.html)）
+- ブックマークに「使う理由」「次にすること」をメモして、案件ごとに整理する（[メモを付けて探す例](https://linkjumkey.matsumotojoho.com/guide/memo.html#bookmark-note-example)）
+- よく使うサイトとPCの資料フォルダーを、同じ画面のボタンから開く（[Windows・Macでの登録例](https://linkjumkey.matsumotojoho.com/guide/uri-file-mode.html#site-and-folder-example)）
+- 検索語を一度入力し、必要な検索先のボタンを選ぶ（[URL・検索ボタンの作り方](https://linkjumkey.matsumotojoho.com/guide/buttons.html)）
+- Desktopで定型文の貼り付けやショートカットキーを登録し、繰り返す入力を減らす（[定型文・キー操作の設定](https://linkjumkey.matsumotojoho.com/guide/host-buttons.html#text-snippets)）
+- iPhone・iPadをPCの操作パッドとして使う。同じWi-Fi／LAN上でDesktopを起動し、PCで登録・確認した操作を実行する（[Padの接続ガイド](https://linkjumkey.matsumotojoho.com/guide/mobile-companion.html)）
 
-Freeプランは30ボタンまで。有料プランの機能・価格・無料試用の適用条件は[公式料金ページ](https://linkjumkey.matsumotojoho.com/pricing.html)と購入画面で確認できます。購入経路によって価格・条件が異なります。
+Freeプランは合計30ボタン、Customスクリプト1件まで。PC操作とスマホPadも使えます。端末間の自動同期はPro / Deck向けです。有料プランの機能・価格・無料試用の適用条件は[公式料金ページ](https://linkjumkey.matsumotojoho.com/pricing.html)と購入画面で確認できます。購入経路によって価格・条件が異なります。
+
+リンク集は閲覧用URLで共有できます。共有は作成時点のコピーで、元データの変更は自動反映されません。個人用のファイル・フォルダーボタンは共有対象外です。Freeでは1リンク5ボタン、公開中1リンクまで使えます（[共有の範囲と更新方法](https://linkjumkey.matsumotojoho.com/guide/share.html)）。
 
 ## AI連携（MCP）
 
 Claude Desktop などのMCP対応AIツールから、LinkJumkey のプロジェクトを読んだり、URLボタンを追加したりできます。PC操作ボタン（アプリ起動・キー送信・Excelマクロなど）はAIが提案するだけで、PC版の承認画面で内容を確認してから保存します。ボタンの実行・完全削除・スクリプト作成はできません。
 
 - 接続ファイル：[LinkJumkey.mcpb](https://github.com/matsumotojoho/linkjumkey-releases/releases/latest/download/LinkJumkey.mcpb)（PC版のインストールと起動が必要です）
-- 設定手順：[AIと作業を進め、メモから再開する](https://linkjumkey.matsumotojoho.com/guide/mcp-setup.html)
+- 設定手順：[AI連携・MCPでリンクとメモを整理](https://linkjumkey.matsumotojoho.com/guide/mcp-setup.html)
 - 公式 MCP Registry：`io.github.matsumotojoho/linkjumkey`
 
 ## AIで外部ツールを作る
@@ -58,7 +63,7 @@ AIには「このMarkdown仕様を読んで、外部ツールのプログラム�
 
 ## English
 
-Keep a note beside the links you use at work. Organize buttons by project, then open the link and see what to check next.
+LinkJumkey adds notes to bookmarks and organizes them by project. On Windows and Mac, the desktop app also works as a launcher for websites, local folders, files, and apps. The Web and iPhone/iPad apps manage links and notes; PC actions run in the desktop app.
 
 [Try the English demo](https://linkjumkey.matsumotojoho.com/solutions/project-notes.html): enter a label, URL and note, create a button, then press it. No sign-up is needed to try. Verify your email to save your buttons in the [Web app](https://linkjumkey.matsumotojoho.com/app.html?lang=en).
 
