@@ -30,10 +30,13 @@ Web版・iPhone/iPad版はURLとメモの整理に使えます。PC内のフォ�
 ## こんな使い方に
 
 - ブックマークに「使う理由」「次にすること」をメモして、案件ごとに整理する（[メモを付けて探す例](https://linkjumkey.matsumotojoho.com/guide/memo.html#bookmark-note-example)）
-- よく使うサイトとPCの資料フォルダーを、同じ画面のボタンから開く（[Windows・Macでの登録例](https://linkjumkey.matsumotojoho.com/guide/uri-file-mode.html#site-and-folder-example)）
+- ファイルとURLを一緒に管理する。PCの資料・フォルダーへの入口とWebサイトを、同じ画面に並べる（[Windows・Macでの登録例](https://linkjumkey.matsumotojoho.com/guide/uri-file-mode.html#site-and-folder-example)）
+- コードを用途メモと一緒に保存する。Desktopでは、スクリプト本文を保存して後から編集・実行するボタンも作れます（[コードをメモに残す](https://linkjumkey.matsumotojoho.com/guide/memo.html#code-note-example)／[スクリプト本文の保存・再編集](https://linkjumkey.matsumotojoho.com/guide/host-buttons.html#save-script)）
 - 検索語を一度入力し、必要な検索先のボタンを選ぶ（[URL・検索ボタンの作り方](https://linkjumkey.matsumotojoho.com/guide/buttons.html)）
 - Desktopで定型文の貼り付けやショートカットキーを登録し、繰り返す入力を減らす（[定型文・キー操作の設定](https://linkjumkey.matsumotojoho.com/guide/host-buttons.html#text-snippets)）
 - iPhone・iPadをPCの操作パッドとして使う。同じWi-Fi／LAN上でDesktopを起動し、PCで登録・確認した操作を実行する（[Padの接続ガイド](https://linkjumkey.matsumotojoho.com/guide/mobile-companion.html)）
+
+ローカルファイルのボタンは、PC上の場所を登録する方式です。元のファイルの中身はLinkJumkeyへコピーされず、ライブラリの書き出し・同期にも含まれません。
 
 Freeプランは合計30ボタン、Customスクリプト1件まで。PC操作とスマホPadも使えます。端末間の自動同期はPro / Deck向けです。有料プランの機能・価格・無料試用の適用条件は[公式料金ページ](https://linkjumkey.matsumotojoho.com/pricing.html)と購入画面で確認できます。購入経路によって価格・条件が異なります。
 
@@ -64,6 +67,8 @@ AIには「このMarkdown仕様を読んで、外部ツールのプログラム�
 ## English
 
 LinkJumkey adds notes to bookmarks and organizes them by project. On Windows and Mac, the desktop app also works as a launcher for websites, local folders, files, and apps. The Web and iPhone/iPad apps manage links and notes; PC actions run in the desktop app.
+
+In Desktop, keep code text with usage notes in [Memo](https://linkjumkey.matsumotojoho.com/guide/memo.html#code-note-example), or [save script text in a PC-action button](https://linkjumkey.matsumotojoho.com/guide/host-buttons.html#save-script) for later editing and execution. Local-file buttons reference files already on your PC; library export and sync do not copy their contents.
 
 [Try the English demo](https://linkjumkey.matsumotojoho.com/solutions/project-notes.html): enter a label, URL and note, create a button, then press it. No sign-up is needed to try. Verify your email to save your buttons in the [Web app](https://linkjumkey.matsumotojoho.com/app.html?lang=en).
 
