@@ -1,0 +1,73 @@
+{
+  "requestId": "demo-video-windows-20261024-001",
+  "project": "動画制作・架空サンプル",
+  "createProject": true,
+  "items": [
+    {
+      "key": "deliverables",
+      "kind": "folder",
+      "title": "成果物",
+      "note": "架空の制作案件。登録時に動画は再生しません。"
+    },
+    {
+      "key": "intro",
+      "kind": "file",
+      "title": "紹介",
+      "path": "C:\\LinkJumkey-Demo\\動画制作\\intro.mp4",
+      "parentKey": "deliverables"
+    },
+    {
+      "key": "guide",
+      "kind": "file",
+      "title": "使い方",
+      "path": "C:\\LinkJumkey-Demo\\動画制作\\guide.mp4",
+      "parentKey": "deliverables"
+    },
+    {
+      "key": "s01",
+      "kind": "file",
+      "title": "S01",
+      "path": "C:\\LinkJumkey-Demo\\動画制作\\s01.mp4",
+      "parentKey": "deliverables"
+    },
+    {
+      "key": "s02",
+      "kind": "file",
+      "title": "S02",
+      "path": "C:\\LinkJumkey-Demo\\動画制作\\s02.mp4",
+      "parentKey": "deliverables"
+    },
+    {
+      "key": "s03",
+      "kind": "file",
+      "title": "S03",
+      "path": "C:\\LinkJumkey-Demo\\動画制作\\s03.mp4",
+      "parentKey": "deliverables"
+    },
+    {
+      "key": "s04",
+      "kind": "file",
+      "title": "S04",
+      "path": "C:\\LinkJumkey-Demo\\動画制作\\s04.mp4",
+      "parentKey": "deliverables"
+    },
+    {
+      "key": "materials",
+      "kind": "localFolder",
+      "title": "資料フォルダー",
+      "path": "C:\\LinkJumkey-Demo\\動画制作\\資料"
+    },
+    {
+      "key": "reference",
+      "kind": "url",
+      "title": "架空の参考ページ",
+      "url": "https://example.invalid/video-reference"
+    },
+    {
+      "key": "work",
+      "kind": "note",
+      "title": "作業メモと次の作業",
+      "note": "目的: 紹介動画の制作\n完了: 仮音声入り6本の構成案\n未確認: 本人音声の処理結果\n次の作業: S02の試し録りを確認する\n本人の追記は消さず、次回は同じカードへ追記する。"
+    }
+  ]
+}

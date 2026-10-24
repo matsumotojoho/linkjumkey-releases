@@ -1,0 +1,915 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LinkJumkey local work-handoff API",
+    "version": "1.8.25",
+    "description": "Desktop 1.8.25+. Local-PC API with UTF-8 JSON. Save artifacts and working notes, read back permanent IDs, then append safely. Any file/localFolder item makes the whole package pending until one trusted Desktop approval. No HTTP/MCP approval or execution endpoint exists in this contract. POST body limit 256 KiB. Server length limits use UTF-16 code units; JSON Schema maxLength alone does not fully enforce that for astral Unicode characters."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:{port}",
+      "variables": {
+        "port": {
+          "default": "9634",
+          "description": "Use the actual Base URL displayed in Desktop Settings > MCP / AI integration."
+        }
+      }
+    }
+  ],
+  "security": [
+    {
+      "localBearer": []
+    }
+  ],
+  "externalDocs": {
+    "url": "https://linkjumkey.matsumotojoho.com/developers/workspace-handoff.md"
+  },
+  "paths": {
+    "/api/workspace/save": {
+      "post": {
+        "operationId": "saveWorkPackage",
+        "summary": "Atomically save a work package, or queue the whole package for PC review",
+        "description": "Creates new nodes only; it is not an upsert by key/title. Select exactly one project or projectId. Parent folders precede their children. At least one local reference makes all items pending, including URL/memo items. Registration never executes or opens a target. A 200 response may be failed or limit_exceeded; inspect status. Approval rechecks the original signed-in session; logout, login or account changes while pending produce a failed ACCOUNT_CHANGED receipt without saving to the new account.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveRequest"
+              },
+              "example": {
+                "requestId": "video-notes-20261024-001",
+                "project": "動画制作",
+                "items": [
+                  {
+                    "key": "work",
+                    "kind": "note",
+                    "title": "作業メモ",
+                    "note": "完了: 構成案\n次: S02の試し録りを確認"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Durable receipt. Branch on status, then read current items after saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "405": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/workspace/note": {
+      "post": {
+        "operationId": "updateWorkNote",
+        "summary": "Append to an existing card/folder, or replace using an exact revision",
+        "description": "Append is the default and preserves personal rich memo content. Replace requires expectedRevision from the latest item read; both modes reject stale expectedRevision when provided. New requestId per deliberate update; exact retry keeps the original receipt and never appends twice.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteRequest"
+              },
+              "example": {
+                "requestId": "video-notes-20261025-001",
+                "projectId": "prj_example",
+                "nodeId": "item_example",
+                "mode": "append",
+                "text": "確認結果: S02を確認\n次の作業: 残りを録音"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved note-update receipt; items omit the per-package key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "405": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/workspace/status": {
+      "get": {
+        "operationId": "getWorkWriteStatus",
+        "summary": "Read the durable write result by exact requestId",
+        "description": "saved means that operation committed; it does not guarantee the card still exists unchanged or that cloud sync completed. Most recent 256 completed receipts and up to 20 pending requests are retained on this PC. REQUEST_NOT_FOUND can mean wrong PC, wrong ID, no persisted operation or an evicted receipt: inspect the library before resubmitting. Unknown/duplicate query parameters are rejected.",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "x-maxUtf16CodeUnits": 128,
+              "minLength": 1,
+              "pattern": "\\S",
+              "description": "Nonblank, single-line, not trimmed. Maximum uses UTF-16 code units."
+            },
+            "description": "Exact requestId used for save or note update."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Original operation state; no write or native execution.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "405": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/workspace/item": {
+      "get": {
+        "operationId": "getWorkItem",
+        "summary": "Read current card/folder content and revision by destination and node ID",
+        "description": "Supply exactly one project or projectId and nodeId. Prefer the stable projectId after rename. Unknown/duplicate query parameters are rejected. Reads never execute local references.",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S",
+              "description": "Exact project name from GET /api/projects. Preserve kana, case and whitespace. New names at most 120 UTF-16 code units. Object-to-string values and reserved prototype names are rejected."
+            },
+            "description": "Exact name; required unless projectId is supplied."
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "x-maxUtf16CodeUnits": 256,
+              "minLength": 1,
+              "pattern": "\\S",
+              "description": "Exact existing ID, not trimmed. Maximum uses UTF-16 code units."
+            },
+            "description": "Existing ID; required unless project is supplied."
+          },
+          {
+            "name": "nodeId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "x-maxUtf16CodeUnits": 256,
+              "minLength": 1,
+              "pattern": "\\S",
+              "description": "Exact existing ID, not trimmed. Maximum uses UTF-16 code units."
+            },
+            "description": "Permanent ID from a saved receipt or get_project."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current saved content; item.note is HTML, item.noteText is its plain-text projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "405": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "localBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Use the local API key from this PC’s Desktop settings. Never use a pairing code or publish a real token. MCP reads its selected local token automatically."
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Request/connection/storage error. Check HTTP status and code; display error/hint without assuming a durable receipt exists.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "WorkItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "kind",
+          "title"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 128,
+            "x-maxUtf16CodeUnits": 128,
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Unique within this request. Maps to permanent nodeId on success; it is not an upsert key across requests."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "note",
+              "url",
+              "file",
+              "localFolder",
+              "folder"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120,
+            "x-maxUtf16CodeUnits": 120,
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Required for every kind; trimmed for storage. The input length must already be within 120 UTF-16 code units."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 20000,
+            "x-maxUtf16CodeUnits": 20000,
+            "description": "Plain text. Required and nonblank for kind note; optional and may be empty for other kinds. CRLF/CR become LF. HTML is escaped."
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 4096,
+            "x-maxUtf16CodeUnits": 4096,
+            "pattern": "^[hH][tT][tT][pP][sS]?://",
+            "description": "kind url only. Complete http/https URL without credentials, whitespace, control characters or backslashes. No file:, notes: or executable links."
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 4096,
+            "x-maxUtf16CodeUnits": 4096,
+            "minLength": 1,
+            "description": "kind file/localFolder only. Absolute local path on the selected PC. Explicit file: spellings are normalized to local paths and still require the same approval. Real target/kind is checked at approval."
+          },
+          "parentKey": {
+            "type": "string",
+            "maxLength": 128,
+            "x-maxUtf16CodeUnits": 128,
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Key of an earlier kind folder item in this package. Parent folders must precede children. Omit for folderId or project root."
+          }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "kind": {
+                "const": "note"
+              },
+              "note": {
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "required": [
+              "note"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "url"
+                  ]
+                },
+                {
+                  "required": [
+                    "path"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "properties": {
+              "kind": {
+                "const": "url"
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "path"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "file",
+                  "localFolder"
+                ]
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "url"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "properties": {
+              "kind": {
+                "const": "folder"
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "url"
+                  ]
+                },
+                {
+                  "required": [
+                    "path"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "SaveRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "items"
+        ],
+        "oneOf": [
+          {
+            "required": [
+              "project"
+            ],
+            "not": {
+              "required": [
+                "projectId"
+              ]
+            }
+          },
+          {
+            "required": [
+              "projectId"
+            ],
+            "not": {
+              "required": [
+                "project"
+              ]
+            }
+          }
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "maxLength": 128,
+            "x-maxUtf16CodeUnits": 128,
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Required for every write. Same normalized operation and ID replays the receipt while retained; different contents or operation with the same ID produce 409 REQUEST_ID_CONFLICT."
+          },
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Exact project name from GET /api/projects. Preserve kana, case and whitespace. New names at most 120 UTF-16 code units. Object-to-string values and reserved prototype names are rejected."
+          },
+          "projectId": {
+            "type": "string",
+            "maxLength": 256,
+            "x-maxUtf16CodeUnits": 256,
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Exact existing ID, not trimmed. Maximum uses UTF-16 code units."
+          },
+          "createProject": {
+            "type": "boolean",
+            "default": false,
+            "description": "Explicit permission to create a missing named project. Cannot be true with projectId."
+          },
+          "folderId": {
+            "type": "string",
+            "maxLength": 256,
+            "x-maxUtf16CodeUnits": 256,
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Existing reachable folder in the selected project. Defaults to root. Invalid IDs never fall back to root. Omit for a new project."
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/WorkItem"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "createProject": {
+                  "const": true
+                }
+              },
+              "required": [
+                "createProject"
+              ]
+            },
+            "then": {
+              "required": [
+                "project"
+              ]
+            }
+          }
+        ]
+      },
+      "NoteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "nodeId",
+          "text"
+        ],
+        "oneOf": [
+          {
+            "required": [
+              "project"
+            ],
+            "not": {
+              "required": [
+                "projectId"
+              ]
+            }
+          },
+          {
+            "required": [
+              "projectId"
+            ],
+            "not": {
+              "required": [
+                "project"
+              ]
+            }
+          }
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "maxLength": 128,
+            "x-maxUtf16CodeUnits": 128,
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Nonblank, single-line, not trimmed. Maximum uses UTF-16 code units."
+          },
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Exact project name from GET /api/projects. Preserve kana, case and whitespace. New names at most 120 UTF-16 code units. Object-to-string values and reserved prototype names are rejected."
+          },
+          "projectId": {
+            "type": "string",
+            "maxLength": 256,
+            "x-maxUtf16CodeUnits": 256,
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Exact existing ID, not trimmed. Maximum uses UTF-16 code units."
+          },
+          "nodeId": {
+            "type": "string",
+            "maxLength": 256,
+            "x-maxUtf16CodeUnits": 256,
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Exact existing ID, not trimmed. Maximum uses UTF-16 code units."
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "append",
+              "replace"
+            ],
+            "default": "append"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 20000,
+            "x-maxUtf16CodeUnits": 20000,
+            "description": "Plain text, may be empty. CRLF/CR normalize to LF. append preserves existing HTML; replace escapes and replaces all current memo text after revision check. Total resulting HTML at most 200000 UTF-16 code units."
+          },
+          "expectedRevision": {
+            "type": "string",
+            "maxLength": 128,
+            "x-maxUtf16CodeUnits": 128,
+            "minLength": 1,
+            "description": "Exact opaque revision from get_item. Required for replace; optional for append. If supplied for either mode it must match current content."
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "mode": {
+                  "const": "replace"
+                }
+              },
+              "required": [
+                "mode"
+              ]
+            },
+            "then": {
+              "required": [
+                "expectedRevision"
+              ]
+            }
+          }
+        ]
+      },
+      "Project": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "rootId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rootId": {
+            "type": "string"
+          }
+        }
+      },
+      "SavedItem": {
+        "type": "object",
+        "required": [
+          "nodeId",
+          "kind",
+          "title",
+          "revision"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Present for package-save results; note-update results omit this key."
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "note",
+              "url",
+              "file",
+              "localFolder",
+              "folder"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "description": "Revision at completion. Read get_item for the current value."
+          }
+        }
+      },
+      "Receipt": {
+        "type": "object",
+        "required": [
+          "ok",
+          "requestId",
+          "status",
+          "replayed",
+          "folderId",
+          "items",
+          "updatedAt"
+        ],
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "saved",
+              "pending_approval",
+              "cancelled",
+              "failed",
+              "limit_exceeded"
+            ]
+          },
+          "replayed": {
+            "type": "boolean",
+            "description": "True when the same write is replayed, not for an ordinary status read."
+          },
+          "project": {
+            "$ref": "#/components/schemas/Project"
+          },
+          "folderId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SavedItem"
+            },
+            "description": "Pending packages have an empty array. Only status:saved allows treating these IDs as completed writes; current existence/content must be read back."
+          },
+          "code": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          },
+          "snapshot": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Item": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "url",
+          "note",
+          "noteText",
+          "revision",
+          "parent"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "note",
+              "url",
+              "file",
+              "localFolder",
+              "folder"
+            ]
+          },
+          "url": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "Returned for local references; no local target is opened by reading."
+          },
+          "note": {
+            "type": "string",
+            "description": "Current stored memo HTML (or legacy plain text). Never blindly post this value to the plain-text API."
+          },
+          "noteText": {
+            "type": "string",
+            "description": "Plain-text projection of the current memo, with decoded entities and line breaks. Rich formatting is available in note."
+          },
+          "revision": {
+            "type": "string",
+            "description": "Opaque content revision to use as expectedRevision; do not compute it yourself."
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ItemResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "project",
+          "item"
+        ],
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "project": {
+            "$ref": "#/components/schemas/Project"
+          },
+          "item": {
+            "$ref": "#/components/schemas/Item"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "ok",
+          "error",
+          "code",
+          "hint"
+        ],
+        "properties": {
+          "ok": {
+            "const": false
+          },
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          },
+          "status": {
+            "const": "failed",
+            "description": "Present on workspace route validation/errors. Authentication/origin rejection happens earlier and may omit it."
+          }
+        }
+      }
+    }
+  }
+}

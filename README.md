@@ -50,6 +50,17 @@ Claude Desktop などのMCP対応AIツールから、LinkJumkey のプロジェ�
 - 設定手順：[AI連携・MCPでリンクとメモを整理](https://linkjumkey.matsumotojoho.com/guide/mcp-setup.html)
 - 公式 MCP Registry：`io.github.matsumotojoho/linkjumkey`
 
+## AIと成果物・作業メモを残す
+
+Desktop **1.8.25以降**では、接続したAIからURLのない作業メモ、資料・動画・PCフォルダーへのボタンをまとめて登録できます。ローカルファイルを含む依頼は、Desktopの「AIからの登録」で保存先と対象を一覧確認してから保存します。登録時にファイルは開きません。
+
+翌日は既存カードを読み、本人の追記を残して同じメモへ追記します。AIは「承認待ち」と「保存済み」を区別し、保存後にカードを読み返します。通常のWebチャットへ頼むだけでPCにつながるわけではなく、対応クライアントでMCPか同じPCのローカルAPIを設定する必要があります。
+
+- [人向けガイドとAIへの依頼文](https://linkjumkey.matsumotojoho.com/guide/ai-workspace.html)
+- [AI・開発者向け仕様](docs/developers/workspace-handoff.md) / [Raw本文](https://raw.githubusercontent.com/matsumotojoho/linkjumkey-releases/main/docs/developers/workspace-handoff.md)
+- [機械可読OpenAPI](docs/developers/workspace-handoff.openapi.json)
+- 架空の制作案件の送信例：[Windows](docs/examples/workspace-handoff.json) / [Mac](docs/examples/workspace-handoff-mac.json)。パスは自分のPCにある実際のファイルへ変更してください。
+
 ## AIで外部ツールを作る
 
 LinkJumkey Desktop 1.8.24以降では、同じPCの外部ツールからプロジェクトを選び、検索結果などのURLをボタンとして保存できます。AIに開発を依頼する場合は、次の仕様と完成サンプルを渡してください。公式サイトをAIが取得できない場合にも使えるよう、公開済みの資料をこのリポジトリの `docs/` にコピーしています。

@@ -1,5 +1,7 @@
 # LinkJumkey 外部ツール開発契約（Desktop 1.8.24以降）
 
+**成果物と作業メモをまとめて残し、同じカードを翌日更新する場合:** Desktop 1.8.25以降の別契約 https://linkjumkey.matsumotojoho.com/developers/workspace-handoff.md を使います。URLなしメモ、ローカルファイル・フォルダーの一覧確認、追記、保存状態と読み返しを扱います。下記の `/api/quick-add` は引き続きHTTP/HTTPSの単純追加専用です。
+
 人向け手順: https://linkjumkey.matsumotojoho.com/guide/external-tools.html
 完成サンプル: https://linkjumkey.matsumotojoho.com/examples/customer-search/README.md
 機械可読OpenAPI: https://linkjumkey.matsumotojoho.com/developers/integrations-api.openapi.json
@@ -22,7 +24,7 @@
 - そのローカルツールからHTTP/HTTPSの結果URLを指定プロジェクトへ直接保存したい: 下記のローカルAPI。Bearerトークンが必要で、POSTはプレビューなしで保存する。
 - AIに現在のライブラリを読み書きさせたい: MCP。https://linkjumkey.matsumotojoho.com/guide/mcp-setup.html
 
-ローカルAPIへnotes://やfile://を送らない。Notesは既存の追加リンクと利用者の確認を使う。ローカルファイルはDesktopの「ファイルを開く」または+Autoで内容を確認してPC操作として保存する。直接APIでPC操作や任意コードを作成・実行する経路にはしない。
+この節の `/api/quick-add` へ `notes://` や `file://` を送らない。Notesは既存の追加リンクと利用者の確認を使う。ローカルファイルはDesktopの「ファイルを開く」または+Autoで登録できる。Desktop 1.8.25以降の外部ツールでは、[成果物・作業メモの保存API](workspace-handoff.md)の `kind: "file"` / `kind: "localFolder"` と絶対パスを使い、PC側の一覧確認を経てまとめて登録できる。この保存APIはファイルを実行せず、任意コードの作成・実行にも使わない。
 
 Google Apps Script、クラウド版Power Automate、クラウド上のAIやサーバーにとって127.0.0.1はその実行環境自身であり、利用者のPCには届かない。クラウドからは利用者が開く追加リンクを返すか、承認したPC側のツールが結果を取りに行く設計にする。ローカルAPIキーをクラウド、AIチャット、生成URLへ埋め込まない。公開Webページからの直接呼出しはCORSで許可されない。
 
