@@ -117,7 +117,7 @@ MCPツールは `save_work_package`、`update_note`、`get_write_status`、`get_
 | --- | --- |
 | `requestId` | 必須。空白だけでない文字列、128 UTF-16コード単位以内。同じ操作の再送では同じ値と同じ内容を使う |
 | `project` / `projectId` | どちらか一方だけ必須。正確な名前、または既存ID。名前の大文字・小文字、カナ、前後の空白を勝手に変更しない |
-| `createProject` | 任意のboolean。既定は`false`。未存在の名前を明示的に作るときだけ`true`。`projectId`との併用不可。新しい名前は120 UTF-16コード単位以内 |
+| `createProject` | 任意のboolean。既定は`false`。未存在の名前を明示的に作るときだけ`true`。`true`と`projectId`の併用不可（`false`は併用可）。新しい名前は120 UTF-16コード単位以内 |
 | `folderId` | 任意。選択プロジェクト内の到達可能な既存フォルダーID、256 UTF-16コード単位以内。省略時はルート。不明なIDをルートへ置き換えない。新規プロジェクトでは省略 |
 | `items` | 必須。1～50件。配列の順番で処理する。フォルダーは子より先に置く |
 
